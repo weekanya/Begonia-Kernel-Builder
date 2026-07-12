@@ -224,7 +224,7 @@ jobs:
           echo "[+] Сборка с ROOT правами, скачиваем инструменты..."
           
           # Клонируем публичный репозиторий с патчами под begonia 4.14
-          git clone --recursive -j $(nproc) --branch kernel-4.14 https://github.com/sidex15/susfs4ksu-begonia BKB
+          git clone --recursive -j $(nproc) --branch kernel-4.14 https://github.com/weekanya/susfs4ksu-begonia BKB
           
           # Создаем стабильный скрипт ksun.sh в корне воркспейса для инжекции KernelSU-Next
           cat << 'EOF' > ksun.sh
