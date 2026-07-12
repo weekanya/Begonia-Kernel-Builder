@@ -206,9 +206,16 @@ jobs:
           KBUILD_BUILD_USER: "weekanya"
           KBUILD_BUILD_HOST: "begonia"
         run: |
+          # 1. Сначала полностью вычищаем исходники от старых файлов
+          make O=${{ env.OUT_DIR }} ARCH=${{ env.arch }} mrproper
+          make ARCH=${{ env.arch }} mrproper
+          
+          # 2. Теперь создаем чистый дефконфиг
           make ${{ env.args }} ${{ env.DEFCONFIG_NAME }}
+          
+          # 3. Меняем локальную версию
           ./scripts/config --set-str LOCALVERSION "-Power-Kernel-Stock"
-
+          
       - name: "🎶 Компиляция исходного кода ядра"
         working-directory: ${{ env.WORKSPACE }}/${{ env.KERNEL_NAME }}
         env:
