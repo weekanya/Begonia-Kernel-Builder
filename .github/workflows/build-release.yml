@@ -216,66 +216,55 @@ jobs:
           echo "ARCH=$ARCH" >> $GITHUB_OUTPUT
           echo "args=$args" >> $GITHUB_OUTPUT
 
-      - name: "🪡 Receiving scripts"
+      - name: "🪡 Скачивание публичных инструментов патчинга"
         id: receiving-scripts
-        working-directory: ${{ env.KERNEL_NAME }}
+        working-directory: ${{ env.WORKSPACE }}
         run: |
-          if [ -d "./BKB" ]; then
-            rm -rf "./BKB"
-          fi
+          # Клонируем публичную репозиторий с патчами под begonia 4.14
+          git clone --recursive -j $(nproc) --branch kernel-4.14 https://github.com/sidex15/susfs4ksu-begonia BKB
+          
+          # Создаем скрипт ksun.sh в корне воркспейса для инжекции KernelSU-Next
+          cat << 'EOF' > ksun.sh
+          #!/bin/sh
+          set -eu
+          GKI_ROOT=$(pwd)
+          DRIVER_DIR="$GKI_ROOT/drivers"
+          DRIVER_MAKEFILE=$DRIVER_DIR/Makefile
+          DRIVER_KCONFIG=$DRIVER_DIR/Kconfig
+          echo "[+] Setting up KernelSU-Next..."
+          git clone https://github.com/KernelSU-Next/KernelSU-Next KernelSU
+          cd KernelSU
+          git checkout next
+          git pull
+          cd "$DRIVER_DIR"
+          ln -sf "$(realpath --relative-to="$DRIVER_DIR" "$GKI_ROOT/KernelSU/kernel")" "kernelsu"
+          grep -q "kernelsu" "$DRIVER_MAKEFILE" || printf "\nobj-\$(CONFIG_KSU) += kernelsu/\n" >> "$DRIVER_MAKEFILE"
+          grep -q "drivers/kernelsu/Kconfig" "$DRIVER_KCONFIG" || sed -i "/endmenu/i\source \"drivers/kernelsu/Kconfig\"" "$DRIVER_KCONFIG"
+          echo '[+] KernelSU-Next injected.'
+          EOF
+          chmod +x ksun.sh
 
-          BKB_BRANCH=main
-
-          git clone --recursive -j $(nproc) --branch $BKB_BRANCH https://x-access-token:${{ secrets.GH_PAT }}@github.com/cvnertnc/susfs4ksu-begonia BKB
-
-      - name: "💉 APatch, SukiSU setup and [BACKPORT]: ptrace"
-        id: apatch-sukisu-setup
-        working-directory: ${{ env.KERNEL_NAME }}
-        env:
-          arch: ${{ steps.generate-args.outputs.ARCH }}
-          DEFCONFIG_NAME: ${{ env.DEFCONFIG_NAME }}
-          GH_PAT: ${{ secrets.GH_PAT }}
-          GITHUB_OUTPUT: ${{ github.output_path }}
-        run: |
-          BKB_YML=releases
-          chmod +x BKB/kernel_patches/bkb/$BKB_YML/apatch_sukisu_setup.sh
-          ./BKB/kernel_patches/bkb/$BKB_YML/apatch_sukisu_setup.sh
-
-      - name: "😋 Integrate KernelSU or KernelSU-Next"
+      - name: "😋 Интеграция KernelSU-Next"
         id: integrate-kernelsu-next
-        working-directory: ${{ env.KERNEL_NAME }}
-        if: ${{ env.withRoot == 'ksu' || env.withRoot == 'sukisu' || env.withRoot == 'ksun' }}
-        env:
-          arch: ${{ steps.generate-args.outputs.ARCH }}
-          DEFCONFIG_NAME: ${{ env.DEFCONFIG_NAME }}
-          GH_PAT: ${{ secrets.GH_PAT }}
-          GITHUB_OUTPUT: ${{ github.output_path }}
-          withRoot: ${{ env.withRoot }}
-          withKPM: ${{ env.withKPM }}
-          KNAME: ${{ env.KNAME }}
+        working-directory: ${{ env.WORKSPACE }}/${{ env.KERNEL_NAME }}
+        if: ${{ env.withRoot == 'ksu' || env.withRoot == 'ksun' }}
         run: |
-          BKB_YML=releases
-          chmod +x BKB/kernel_patches/bkb/$BKB_YML/integrate_kernelsu.sh
-          ./BKB/kernel_patches/bkb/$BKB_YML/integrate_kernelsu.sh
+          # Запускаем созданный инжектор для подключения папки KernelSU к сборке
+          ../ksun.sh
+          echo "ROOT_VERSION=KSU-Next" >> $GITHUB_OUTPUT
 
-      - name: "🥷 Add SUSFS patches"
+      - name: "🥷 Автоматический накат патчей SUSFS v1.5.3"
         id: add-susfs-patches
-        working-directory: ${{ env.KERNEL_NAME }}
-        if: ${{ (env.withRoot == 'ksu' || env.withRoot == 'sukisu' || env.withRoot == 'ksun') && env.withSUSFS == 'true' }}
-        env:
-          arch: ${{ steps.generate-args.outputs.ARCH }}
-          DEFCONFIG_NAME: ${{ env.DEFCONFIG_NAME }}
-          GH_PAT: ${{ secrets.GH_PAT }}
-          GITHUB_OUTPUT: ${{ github.output_path }}
-          withRoot: ${{ env.withRoot }}
-          withSUSFS: ${{ env.withSUSFS }}
-          whichSUSFS: ${{ matrix.repos.whichSUSFS }}
-          KNAME: ${{ env.KNAME }}
+        working-directory: ${{ env.WORKSPACE }}/${{ env.KERNEL_NAME }}
+        if: ${{ (env.withRoot == 'ksu' || env.withRoot == 'ksun') && env.withSUSFS == 'true' }}
         run: |
-          BKB_YML=releases
-          chmod +x BKB/kernel_patches/bkb/$BKB_YML/add_susfs_patches.sh
-          ./BKB/kernel_patches/bkb/$BKB_YML/add_susfs_patches.sh
-
+          echo "[+] Применяем патчи структуры ядра для SUSFS v1.5.3 Non-GKI 4.14..."
+          
+          # Применяем патчи ядра поочередно
+          patch -p1 < ${{ env.WORKSPACE }}/BKB/kernel_patches/0002-fs-Implement-susfs-v1.5.3.patch
+          patch -p1 < ${{ env.WORKSPACE }}/BKB/kernel_patches/0001-KernelSU-Next-Implement-susfs-v1.5.3-plus-non-gki.patch
+          
+          echo "[+] Патчи успешно накатаны!"
       - name: "👍 Make defconfig"
         working-directory: ${{ env.KERNEL_NAME }}
         env:
