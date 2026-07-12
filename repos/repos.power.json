@@ -4,9 +4,9 @@
     "kernelSource": {
       "device": "begonia",
       "defconfig": "begonia_user_defconfig",
-      "name": "Power-Non-Patches",
-      "repo": "https://github.com/Saikrishna1504/kernel_xiaomi_mt6785",
-      "branch": "bka"
+      "name": "Power-Clean-Base",
+      "repo": "https://github.com/weekanya/kernel_xiaomi_mt6785",
+      "branch": "fifteen-fixed"
     },
     "withRoot": "none",
     "withSUSFS": false,
@@ -45,8 +45,8 @@
     "AnyKernel3": {
       "use": true,
       "release": true,
-      "repo": "https://github.com/cvnertnc/AnyKernel3/",
-      "branch": "begonia"
+      "repo": "https://github.com/weekanya/AnyKernel3",
+      "branch": "master"
     }
   },
   {
@@ -55,12 +55,12 @@
       "device": "begonia",
       "defconfig": "begonia_user_defconfig",
       "name": "Power-KSU-Next-SUSFS",
-      "repo": "https://github.com/Saikrishna1504/kernel_xiaomi_mt6785",
-      "branch": "bka"
+      "repo": "https://github.com/weekanya/kernel_xiaomi_mt6785",
+      "branch": "fifteen-fixed"
     },
     "withRoot": "ksun",
     "withSUSFS": true,
-    "whichSUSFS": "susfs-159",
+    "whichSUSFS": "susfs-153",
     "withKPM": false,
     "toolchains": [
       {
@@ -95,8 +95,8 @@
     "AnyKernel3": {
       "use": true,
       "release": true,
-      "repo": "https://github.com/cvnertnc/AnyKernel3/",
-      "branch": "begonia"
+      "repo": "https://github.com/weekanya/AnyKernel3",
+      "branch": "master"
     }
   }
 ]
