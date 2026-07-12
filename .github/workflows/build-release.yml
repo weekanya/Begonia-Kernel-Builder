@@ -218,12 +218,15 @@ jobs:
 
       - name: "🪡 Скачивание публичных инструментов патчинга"
         id: receiving-scripts
+        if: ${{ env.withRoot == 'ksu' || env.withRoot == 'ksun' }}
         working-directory: ${{ env.WORKSPACE }}
         run: |
-          # Клонируем публичную репозиторий с патчами под begonia 4.14
+          echo "[+] Сборка с ROOT правами, скачиваем инструменты..."
+          
+          # Клонируем публичный репозиторий с патчами под begonia 4.14
           git clone --recursive -j $(nproc) --branch kernel-4.14 https://github.com/sidex15/susfs4ksu-begonia BKB
           
-          # Создаем скрипт ksun.sh в корне воркспейса для инжекции KernelSU-Next
+          # Создаем стабильный скрипт ksun.sh в корне воркспейса для инжекции KernelSU-Next
           cat << 'EOF' > ksun.sh
           #!/bin/sh
           set -eu
@@ -232,10 +235,10 @@ jobs:
           DRIVER_MAKEFILE=$DRIVER_DIR/Makefile
           DRIVER_KCONFIG=$DRIVER_DIR/Kconfig
           echo "[+] Setting up KernelSU-Next..."
+          
+          # Клонируем дефолтную рабочую ветку KernelSU-Next
           git clone https://github.com/KernelSU-Next/KernelSU-Next KernelSU
-          cd KernelSU
-          git checkout next
-          git pull
+          
           cd "$DRIVER_DIR"
           ln -sf "$(realpath --relative-to="$DRIVER_DIR" "$GKI_ROOT/KernelSU/kernel")" "kernelsu"
           grep -q "kernelsu" "$DRIVER_MAKEFILE" || printf "\nobj-\$(CONFIG_KSU) += kernelsu/\n" >> "$DRIVER_MAKEFILE"
