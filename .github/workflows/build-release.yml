@@ -12,6 +12,12 @@ on:
         default: true
 
   workflow_dispatch:
+    inputs:
+      make_release_manual:
+        description: "Создавать релиз на GitHub? (Если отключить, ZIP будет только в Artifacts)"
+        required: true
+        type: boolean
+        default: true
 
 jobs:
   Set-repos:
@@ -263,11 +269,17 @@ jobs:
         run: |
           echo "[+] Применяем патчи структуры ядра для SUSFS v1.5.3 Non-GKI 4.14..."
           
-          # Применяем патчи ядра поочередно
+          # 1. Применяем первый патч (fs) прямо в папке ядра
           patch -p1 < ${{ env.WORKSPACE }}/BKB/kernel_patches/0002-fs-Implement-susfs-v1.5.3.patch
+          
+          # 2. Выходим из папки ядра и заходим в реальную директорию KernelSU
+          cd ../KernelSU
+          
+          # 3. Применяем патч КCУ к исходникам KernelSU-Next
           patch -p1 < ${{ env.WORKSPACE }}/BKB/kernel_patches/0001-KernelSU-Next-Implement-susfs-v1.5.3-plus-non-gki.patch
           
           echo "[+] Патчи успешно накатаны!"
+          
       - name: "👍 Make defconfig"
         working-directory: ${{ env.KERNEL_NAME }}
         env:
@@ -322,7 +334,7 @@ jobs:
       - name: 🧧 Create GitHub Release => (${{ env.builddate }})
         continue-on-error: false
         uses: softprops/action-gh-release@v2.1.0
-        if: ${{ env.useAnykernel == 'true' && env.release == 'true' }}
+        if: ${{ env.useAnykernel == 'true' && env.release == 'true' && (github.event.inputs.make_release_manual == 'true' || github.event_name == 'workflow_call') }}
         with:
           tag_name: v${{ env.builddate }}
           name: v${{ env.builddate }}
