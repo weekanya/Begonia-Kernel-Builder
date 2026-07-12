@@ -6,7 +6,7 @@
       "defconfig": "begonia_user_defconfig",
       "name": "Power-Clean-Base",
       "repo": "https://github.com/weekanya/kernel_xiaomi_mt6785",
-      "branch": "fifteen-fixed"
+      "branch": "main"
     },
     "withRoot": "none",
     "withSUSFS": false,
