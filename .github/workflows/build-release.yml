@@ -261,7 +261,7 @@ jobs:
           # Запускаем созданный инжектор для подключения папки KernelSU к сборке
           ../ksun.sh
           echo "ROOT_VERSION=KSU-Next" >> $GITHUB_OUTPUT
-
+          
       - name: "🥷 Автоматический накат патчей SUSFS v1.5.3"
         id: add-susfs-patches
         working-directory: ${{ env.WORKSPACE }}/${{ env.KERNEL_NAME }}
@@ -269,13 +269,13 @@ jobs:
         run: |
           echo "[+] Применяем патчи структуры ядра для SUSFS v1.5.3 Non-GKI 4.14..."
           
-          # 1. Первый патч накладываем в корне ядра
+          # 1. Первый патч накладываем в текущей папке (корень ядра)
           patch -p1 < ${{ env.WORKSPACE }}/BKB/kernel_patches/0002-fs-Implement-susfs-v1.5.3.patch
           
-          # 2. Переходим в KernelSU по АБСОЛЮТНОМУ пути, используя переменную воркспейса
-          cd ${{ env.WORKSPACE }}/KernelSU
+          # 2. Переходим в папку KernelSU, которая лежит прямо здесь
+          cd KernelSU
           
-          # 3. Применяем патч КCУ к исходникам KernelSU-Next
+          # 3. Применяем второй патч к файлам KernelSU-Next
           patch -p1 < ${{ env.WORKSPACE }}/BKB/kernel_patches/0001-KernelSU-Next-Implement-susfs-v1.5.3-plus-non-gki.patch
           
           echo "[+] Патчи успешно накатаны!"
